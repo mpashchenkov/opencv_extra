@@ -28,11 +28,11 @@ class Model:
         return 'cd onnx_models_cache && git lfs pull --include=/' + str(self.model_path) + ' --exclude="" '
 
     def verify(self):
-        print('[Info]: Verify file:')
         if not os.path.exists(self.MODELS_DIR + self.model_path):
             return False
         if not self.sha:
             return False
+        print('[Info]: Verify file:')
         print('        Expect sha: {}'.format(self.sha))
         sha = hashlib.sha1()
         try:
