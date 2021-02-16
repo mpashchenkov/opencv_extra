@@ -50,7 +50,7 @@ class Model:
     def create_dir(self):
         model_dir_path = self.MODELS_DIR + self.filepath
         if not os.path.exists(model_dir_path):
-            os.makedirs(model_dir_path, exist_ok=True)
+            os.makedirs(model_dir_path)
         else:
             print('[Warn]: Directory already contains a folder for {} - skipping'.format(self.name))
 
@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
     # "lfs" directory contains some data
     # Remove this folder then "onnx_models_cache" will have standard size - 180 MB
-    # If we remove "onnx_models" folder than models will be downloaded again
+    # If we remove "onnx_models" folder then models will be downloaded again
     # and "lfs" folder will exist during download
     lfs_cache_path = CACHE_DIR + '.git/lfs'
     if os.path.exists(lfs_cache_path):
