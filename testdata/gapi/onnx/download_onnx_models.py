@@ -27,8 +27,8 @@ class Model:
     def sys_lfs_call(self):
         return 'cd onnx_models_cache && git lfs pull --include=/' + str(self.model_path) + ' --exclude="" '
 
-    def verify(self):
-        if not os.path.exists(self.MODELS_DIR + self.model_path):
+    def verify(self, path):
+        if not os.path.exists(path):
             return False
         if not self.sha:
             return False
@@ -36,7 +36,7 @@ class Model:
         print('        Expect sha: {}'.format(self.sha))
         sha = hashlib.sha1()
         try:
-            with open(self.MODELS_DIR + self.filepath + self.name + '.onnx', 'rb') as f:
+            with open(path, 'rb') as f:
                 while True:
                     buf = f.read(self.BUFSIZE)
                     if not buf:
@@ -56,24 +56,28 @@ class Model:
 
     def download(self):
         print('______________________{}______________________'.format(self.name))
-        print('[Info]: Create directory for {}'.format(self.name))
+        print('[Info]: Creating directory for {}'.format(self.name))
         self.create_dir()
-        if self.verify():
+        if self.verify(self.MODELS_DIR + self.model_path):
             print('[Warn]: Hash match - skipping')
             return True
-        print('[Info]: Download model')
-        model_cache_file_path = CACHE_DIR + self.filepath + self.name + '_cache.onnx'
-        model_cache_model_path = CACHE_DIR + self.model_path
-        # Copy cache file with new name
-        if not os.path.exists(model_cache_file_path):
-            os.replace(model_cache_model_path, model_cache_file_path)
+        print('[Info]: Downloading model')
         # Pull large model file
         os.system(self.sys_lfs_call())
+        if self.verify(CACHE_DIR + self.model_path):
         # Move large model file to onnx_models
-        os.replace(model_cache_model_path, self.MODELS_DIR + self.model_path)
-        # Rename cache file to old name
-        os.rename(model_cache_file_path, model_cache_model_path)
-        return self.verify()
+            os.replace(CACHE_DIR + self.model_path, self.MODELS_DIR + self.model_path)
+            return True
+        return False
+
+def clear_pulled_files():
+    # "lfs" directory contains some data
+    # Remove this folder then "onnx_models_cache" will have standard size - 180 MB
+    # If we remove "onnx_models" folder then models will be downloaded again
+    # and "lfs" folder will exist during download
+    lfs_cache_path = CACHE_DIR + '.git/lfs'
+    if os.path.exists(lfs_cache_path):
+        rmdir_with_data(lfs_cache_path)
 
 def download_cache():
     print('______________________{}______________________'.format('Download cache'))
@@ -81,7 +85,8 @@ def download_cache():
         print('[Info]: Cloning onnx_models repository from https://github.com/onnx/models.git')
         os.system('git clone --recursive https://github.com/onnx/models.git onnx_models_cache')
     else:
-        print('[Warn]: Directory already contains a "onnx_models_cache" folder - skipping')
+        clear_pulled_files()
+        print('[Warn]: Directory already contains the "onnx_models_cache" folder - skipping')
 
 models = [
     Model(
@@ -138,15 +143,7 @@ if __name__ == '__main__':
         else:
             print(m)
     if failedModels:
-        print("Following models have not been downloaded:")
+        print("[Warn]: Following models have not been downloaded:")
         for f in failedModels:
             print("* {}".format(f))
-
-    # "lfs" directory contains some data
-    # Remove this folder then "onnx_models_cache" will have standard size - 180 MB
-    # If we remove "onnx_models" folder then models will be downloaded again
-    # and "lfs" folder will exist during download
-    lfs_cache_path = CACHE_DIR + '.git/lfs'
-    if os.path.exists(lfs_cache_path):
-        rmdir_with_data(lfs_cache_path)
 print('[Info]: Done')
