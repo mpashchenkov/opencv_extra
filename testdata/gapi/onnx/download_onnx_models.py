@@ -32,8 +32,8 @@ class Model:
             return False
         if not self.sha:
             return False
-        print('[Info]: Verify file:')
-        print('        Expect sha: {}'.format(self.sha))
+        print('[Info]: Verifying file:')
+        print('        Expected sha: {}'.format(self.sha))
         sha = hashlib.sha1()
         try:
             with open(path, 'rb') as f:
